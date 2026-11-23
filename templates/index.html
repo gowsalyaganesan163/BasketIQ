@@ -1,0 +1,712 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BasketIQ | Retail Intelligence</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+</head>
+<body>
+
+<div class="app-shell">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-icon">B</div>
+            <div>
+                <h2>BasketIQ</h2>
+                <span>Retail Intelligence</span>
+            </div>
+        </div>
+
+        <div class="sidebar-label">WORKSPACE</div>
+
+        <nav class="sidebar-nav">
+            <a href="#overview" class="nav-item active">
+                <span>▦</span> Overview
+            </a>
+
+            <a href="#upload-section" class="nav-item">
+                <span>⇧</span> Dataset
+            </a>
+
+            <a href="#association-section" class="nav-item">
+                <span>⤳</span> Associations
+            </a>
+
+            <a href="#trends-section" class="nav-item">
+                <span>↗</span> Basket Shifts
+            </a>
+
+            <a href="#network-section" class="nav-item">
+                <span>◎</span> Network
+            </a>
+
+            <a href="#recommendations-section" class="nav-item">
+                <span>✦</span> Recommendations
+            </a>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <div class="sidebar-note">
+                <div class="note-icon">✦</div>
+                <h4>Temporal Intelligence</h4>
+                <p>Discover how product relationships evolve over time.</p>
+            </div>
+
+            <div class="sidebar-footer">
+                <span class="status-dot"></span>
+                Local analysis environment
+            </div>
+        </div>
+    </aside>
+
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+
+        <!-- TOPBAR -->
+        <header class="topbar">
+            <div class="breadcrumb">
+                <span>Workspace</span>
+                <span class="breadcrumb-divider">/</span>
+                <strong>Overview</strong>
+            </div>
+
+            <div class="topbar-right">
+                <div class="system-status">
+                    <span class="status-dot"></span>
+                    System ready
+                </div>
+
+                <div class="profile-avatar">BI</div>
+            </div>
+        </header>
+
+
+        <!-- PAGE HEADER -->
+        <section id="overview" class="page-header">
+            <div>
+                <span class="eyebrow">RETAIL ANALYTICS PLATFORM</span>
+                <h1>Market Basket Intelligence</h1>
+                <p>
+                    Discover product relationships and track how purchasing
+                    patterns evolve over time.
+                </p>
+            </div>
+
+            <div class="header-badge">
+                <span>✦</span>
+                Temporal analysis enabled
+            </div>
+        </section>
+
+
+        <!-- FLASH MESSAGES -->
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="flash-container">
+                    {% for message in messages %}
+                        <div class="flash-message">
+                            <span>⚠</span>
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+
+        <!-- DATASET UPLOAD -->
+        <section id="upload-section" class="panel upload-panel">
+            <div class="section-heading">
+                <div>
+                    <span class="section-kicker">DATA INPUT</span>
+                    <h2>Dataset Configuration</h2>
+                    <p>Upload your retail transaction dataset to begin.</p>
+                </div>
+            </div>
+
+            <form action="{{ url_for('upload_dataset') }}"
+                  method="POST"
+                  enctype="multipart/form-data"
+                  id="upload-form">
+
+                <label for="dataset" class="upload-dropzone">
+                    <div class="upload-icon">⇧</div>
+                    <h3>Upload your dataset</h3>
+                    <p>Drag a file here or click to browse</p>
+                    <span class="file-types">CSV or XLSX · Max 50 MB</span>
+
+                    <input type="file"
+                           id="dataset"
+                           name="dataset"
+                           accept=".csv,.xlsx"
+                           required>
+                </label>
+
+                <div id="selected-file" class="selected-file hidden">
+                    <span>▤</span>
+                    <span id="selected-file-name"></span>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    Upload Dataset <span>→</span>
+                </button>
+            </form>
+
+            {% if dataset_name %}
+                <div class="dataset-loaded">
+                    <span class="status-dot"></span>
+                    <div>
+                        <strong>{{ dataset_name }}</strong>
+                        <small>Dataset loaded successfully</small>
+                    </div>
+                </div>
+            {% endif %}
+        </section>
+
+
+        <!-- COLUMN MAPPING + PARAMETERS -->
+        {% if columns %}
+        <section class="panel configuration-panel">
+            <div class="section-heading">
+                <div>
+                    <span class="section-kicker">ANALYSIS SETUP</span>
+                    <h2>Configure Analysis</h2>
+                    <p>Map dataset columns and set mining thresholds.</p>
+                </div>
+            </div>
+
+            <form action="{{ url_for('analyze') }}"
+                  method="POST"
+                  id="analysis-form">
+
+                <div class="configuration-grid">
+
+                    <div class="configuration-block">
+                        <h3>Column Mapping</h3>
+                        <p class="block-description">
+                            Tell BasketIQ what each column represents.
+                        </p>
+
+                        <div class="form-field">
+                            <label for="transaction">Transaction ID <span class="required">*</span></label>
+                            <select name="transaction" id="transaction" required>
+                                <option value="">Select column</option>
+                                {% for column in columns %}
+                                    <option value="{{ column }}">{{ column }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="product">Product <span class="required">*</span></label>
+                            <select name="product" id="product" required>
+                                <option value="">Select column</option>
+                                {% for column in columns %}
+                                    <option value="{{ column }}">{{ column }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="date">Transaction Date</label>
+                            <select name="date" id="date">
+                                <option value="">None</option>
+                                {% for column in columns %}
+                                    <option value="{{ column }}">{{ column }}</option>
+                                {% endfor %}
+                            </select>
+                            <small>Required for temporal trend analysis.</small>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="quantity">Quantity</label>
+                            <select name="quantity" id="quantity">
+                                <option value="">None</option>
+                                {% for column in columns %}
+                                    <option value="{{ column }}">{{ column }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+
+                    <div class="configuration-block">
+                        <h3>Mining Parameters</h3>
+                        <p class="block-description">
+                            Adjust thresholds for association rule discovery.
+                        </p>
+
+                        <div class="form-field">
+                            <label for="min_support">
+                                Minimum Support
+                            </label>
+                            <div class="input-with-hint">
+                                <input type="number"
+                                       name="min_support"
+                                       id="min_support"
+                                       value="0.02"
+                                       min="0.001"
+                                       max="1"
+                                       step="0.001"
+                                       required>
+                                <span class="input-hint">0 – 1</span>
+                            </div>
+                            <small>How frequently an itemset must occur.</small>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="min_confidence">
+                                Minimum Confidence
+                            </label>
+                            <div class="input-with-hint">
+                                <input type="number"
+                                       name="min_confidence"
+                                       id="min_confidence"
+                                       value="0.30"
+                                       min="0"
+                                       max="1"
+                                       step="0.01"
+                                       required>
+                                <span class="input-hint">0 – 1</span>
+                            </div>
+                            <small>Reliability threshold for a rule.</small>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="min_lift">
+                                Minimum Lift
+                            </label>
+                            <div class="input-with-hint">
+                                <input type="number"
+                                       name="min_lift"
+                                       id="min_lift"
+                                       value="1.0"
+                                       min="0"
+                                       step="0.1"
+                                       required>
+                                <span class="input-hint">≥ 0</span>
+                            </div>
+                            <small>Strength of association relative to chance.</small>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="form-footer">
+                    <div class="form-footer-note">
+                        <span>ⓘ</span>
+                        Lower thresholds may produce more rules.
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-analyze">
+                        <span class="analyze-icon">✦</span>
+                        Run Analysis
+                        <span>→</span>
+                    </button>
+                </div>
+            </form>
+        </section>
+        {% endif %}
+
+
+        <!-- DATASET PREVIEW -->
+        {% if preview %}
+        <section class="panel preview-panel">
+            <div class="section-heading">
+                <div>
+                    <span class="section-kicker">DATA EXPLORATION</span>
+                    <h2>Dataset Preview</h2>
+                    <p>Preview of the first 10 rows.</p>
+                </div>
+            </div>
+
+            <div class="table-wrapper preview-table">
+                {{ preview | safe }}
+            </div>
+        </section>
+        {% endif %}
+
+
+        <!-- RESULTS -->
+        {% if results %}
+
+        <section class="results-section">
+
+            <!-- KPI CARDS -->
+            <div class="section-heading results-heading">
+                <div>
+                    <span class="section-kicker">ANALYSIS RESULTS</span>
+                    <h2>Analysis Overview</h2>
+                    <p>Summary of the current basket analysis.</p>
+                </div>
+
+                <div class="analysis-success">
+                    <span class="status-dot"></span>
+                    Analysis completed
+                </div>
+            </div>
+
+            <div class="kpi-grid">
+
+                <div class="kpi-card">
+                    <div class="kpi-top">
+                        <span class="kpi-label">Transactions</span>
+                        <span class="kpi-icon purple">▤</span>
+                    </div>
+                    <h3>{{ results.total_transactions }}</h3>
+                    <p>Processed transactions</p>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-top">
+                        <span class="kpi-label">Unique Products</span>
+                        <span class="kpi-icon blue">◇</span>
+                    </div>
+                    <h3>{{ results.unique_products }}</h3>
+                    <p>Distinct product items</p>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-top">
+                        <span class="kpi-label">Frequent Itemsets</span>
+                        <span class="kpi-icon green">▦</span>
+                    </div>
+                    <h3>{{ results.frequent_itemsets }}</h3>
+                    <p>Identified item combinations</p>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-top">
+                        <span class="kpi-label">Association Rules</span>
+                        <span class="kpi-icon orange">⤳</span>
+                    </div>
+                    <h3>{{ results.total_rules }}</h3>
+                    <p>Qualified association rules</p>
+                </div>
+
+            </div>
+
+
+            <!-- WARNINGS -->
+            {% if results.warnings %}
+            <div class="warning-panel">
+                <div class="warning-icon">⚠</div>
+                <div>
+                    <strong>Analysis notices</strong>
+                    {% for warning in results.warnings %}
+                        <p>{{ warning }}</p>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+
+            <!-- ASSOCIATION RULES -->
+            <section id="association-section" class="panel results-panel">
+                <div class="section-heading">
+                    <div>
+                        <span class="section-kicker">PRODUCT RELATIONSHIPS</span>
+                        <h2>Association Rules</h2>
+                        <p>Products that frequently appear together in transactions.</p>
+                    </div>
+                    <div class="result-count">
+                        {{ results.rules|length }} rules
+                    </div>
+                </div>
+
+                {% if results.rules %}
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Antecedent</th>
+                                <th>Consequent</th>
+                                <th>Support</th>
+                                <th>Confidence</th>
+                                <th>Lift</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for rule in results.rules %}
+                            <tr>
+                                <td>
+                                    <div class="product-tags">
+                                        {% for product in rule.antecedents.split(', ') %}
+                                            <span class="product-tag">{{ product }}</span>
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="product-tags">
+                                        {% for product in rule.consequents.split(', ') %}
+                                            <span class="product-tag target">{{ product }}</span>
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                                <td>{{ "%.3f"|format(rule.support) }}</td>
+                                <td>
+                                    <span class="metric-pill confidence">
+                                        {{ "%.3f"|format(rule.confidence) }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="metric-pill lift">
+                                        {{ "%.3f"|format(rule.lift) }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                    <div class="empty-state">
+                        <div class="empty-icon">⤳</div>
+                        <h3>No association rules found</h3>
+                        <p>Try lowering your support, confidence, or lift thresholds.</p>
+                    </div>
+                {% endif %}
+            </section>
+
+
+            <!-- TEMPORAL TRENDS -->
+            <section id="trends-section" class="panel results-panel">
+                <div class="section-heading">
+                    <div>
+                        <span class="section-kicker">TIME-BASED COMPARISON</span>
+                        <h2>Basket Shift Detector</h2>
+                        <p>How product associations change between periods.</p>
+                    </div>
+                    <div class="result-count">
+                        {{ results.trends|length }} trends
+                    </div>
+                </div>
+
+                {% if results.trends %}
+                <div class="trend-summary">
+                    <div class="trend-stat emerging">
+                        <span class="trend-symbol">✦</span>
+                        <div>
+                            <strong>
+                                {{ results.trends|selectattr("status", "equalto", "Emerging")|list|length }}
+                            </strong>
+                            <small>Emerging</small>
+                        </div>
+                    </div>
+
+                    <div class="trend-stat growing">
+                        <span class="trend-symbol">↗</span>
+                        <div>
+                            <strong>
+                                {{ results.trends|selectattr("status", "equalto", "Growing")|list|length }}
+                            </strong>
+                            <small>Growing</small>
+                        </div>
+                    </div>
+
+                    <div class="trend-stat declining">
+                        <span class="trend-symbol">↘</span>
+                        <div>
+                            <strong>
+                                {{ results.trends|selectattr("status", "equalto", "Declining")|list|length }}
+                            </strong>
+                            <small>Declining</small>
+                        </div>
+                    </div>
+
+                    <div class="trend-stat stable">
+                        <span class="trend-symbol">→</span>
+                        <div>
+                            <strong>
+                                {{ results.trends|selectattr("status", "equalto", "Stable")|list|length }}
+                            </strong>
+                            <small>Stable</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Association</th>
+                                <th>Earlier Lift</th>
+                                <th>Recent Lift</th>
+                                <th>Lift Change</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for trend in results.trends %}
+                            <tr>
+                                <td>
+                                    <div class="trend-association">
+                                        <span>{{ trend.antecedents|join(", ") }}</span>
+                                        <span class="association-arrow">→</span>
+                                        <span>{{ trend.consequents|join(", ") }}</span>
+                                    </div>
+                                </td>
+                                <td>{{ "%.3f"|format(trend.earlier_lift) }}</td>
+                                <td>{{ "%.3f"|format(trend.recent_lift) }}</td>
+                                <td>
+                                    {% if trend.lift_change > 0 %}
+                                        <span class="change-positive">
+                                            +{{ "%.3f"|format(trend.lift_change) }}
+                                        </span>
+                                    {% elif trend.lift_change < 0 %}
+                                        <span class="change-negative">
+                                            {{ "%.3f"|format(trend.lift_change) }}
+                                        </span>
+                                    {% else %}
+                                        <span class="change-neutral">0.000</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="trend-badge {{ trend.status|lower }}">
+                                        {{ trend.status }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">↗</div>
+                    <h3>No temporal trends available</h3>
+                    <p>Make sure a valid date column is mapped during analysis.</p>
+                </div>
+                {% endif %}
+            </section>
+
+
+            <!-- NETWORK -->
+            <section id="network-section" class="panel results-panel">
+                <div class="section-heading">
+                    <div>
+                        <span class="section-kicker">RELATIONSHIP VISUALIZATION</span>
+                        <h2>Association Network</h2>
+                        <p>Explore connections between products.</p>
+                    </div>
+                </div>
+
+                {% if results.network.nodes %}
+                    <div class="network-legend">
+                        <span><i class="legend-node"></i> Product</span>
+                        <span><i class="legend-line"></i> Association</span>
+                    </div>
+
+                    <div id="network-chart"
+                         data-network='{{ results.network|tojson }}'>
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <div class="empty-icon">◎</div>
+                        <h3>No network data available</h3>
+                        <p>Association rules are needed to construct the network.</p>
+                    </div>
+                {% endif %}
+            </section>
+
+
+            <!-- RECOMMENDATIONS -->
+            <section id="recommendations-section" class="panel results-panel">
+                <div class="section-heading">
+                    <div>
+                        <span class="section-kicker">BUSINESS INTERPRETATION</span>
+                        <h2>Retail Recommendations</h2>
+                        <p>Potential actions based on detected association trends.</p>
+                    </div>
+                    <div class="result-count">
+                        {{ results.recommendations|length }} suggestions
+                    </div>
+                </div>
+
+                {% if results.recommendations %}
+                <div class="recommendations-grid">
+                    {% for recommendation in results.recommendations %}
+                    <div class="recommendation-card">
+                        <div class="recommendation-top">
+                            <span class="recommendation-icon">✦</span>
+                            <span class="trend-badge {{ recommendation.status|lower }}">
+                                {{ recommendation.status }}
+                            </span>
+                        </div>
+
+                        <div class="recommendation-products">
+                            {{ recommendation.products }}
+                        </div>
+
+                        <p>{{ recommendation.suggestion }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">✦</div>
+                    <h3>No recommendations yet</h3>
+                    <p>Temporal trends are required to generate recommendations.</p>
+                </div>
+                {% endif %}
+            </section>
+
+
+            <!-- MLFLOW -->
+            <section class="panel mlflow-panel">
+                <div class="mlflow-icon">◈</div>
+                <div class="mlflow-content">
+                    <h3>Experiment Tracking</h3>
+                    <p>Analysis parameters and metrics are tracked through MLflow.</p>
+
+                    {% if results.mlflow_run_id %}
+                        <div class="run-id">
+                            <span>Run ID</span>
+                            <code>{{ results.mlflow_run_id }}</code>
+                        </div>
+                    {% else %}
+                        <div class="run-id">
+                            <span>Run ID</span>
+                            <code>Not recorded</code>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <a href="http://localhost:5001"
+                   target="_blank"
+                   rel="noopener"
+                   class="btn btn-secondary">
+                    Open MLflow <span>↗</span>
+                </a>
+            </section>
+
+        </section>
+        {% endif %}
+
+
+        <!-- FOOTER -->
+        <footer class="page-footer">
+            <div class="footer-brand">
+                <span class="brand-icon small">B</span>
+                <strong>BasketIQ</strong>
+            </div>
+            <p>Temporal Association Rule Mining for Retail Analytics</p>
+            <span>V1.0 · Local Development</span>
+        </footer>
+
+    </main>
+</div>
+
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>

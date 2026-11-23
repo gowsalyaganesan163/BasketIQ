@@ -1,0 +1,9 @@
+Flask
+pandas
+numpy
+mlxtend
+plotly
+mlflow
+openpyxl
+networkx
+pytest
